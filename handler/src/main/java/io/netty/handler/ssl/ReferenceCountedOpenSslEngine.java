@@ -160,7 +160,7 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
     private static final int MAX_CIPHERTEXT_LENGTH = MAX_PLAINTEXT_LENGTH + 1024;
 
     // Header (5) + Data (2^14) + Encryption (1024) + MAC (20) + Padding (256)
-    // No compression supported!
+    // Compression not supported!
     static final int MAX_ENCRYPTED_PACKET_LENGTH = MAX_CIPHERTEXT_LENGTH + 5 + 20 + 256;
 
     private static final AtomicIntegerFieldUpdater<ReferenceCountedOpenSslEngine> DESTROYED_UPDATER;
@@ -676,7 +676,6 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
 
                                     return new SSLEngineResult(CLOSED, NEED_UNWRAP, bytesConsumed, bytesProduced);
                                 }
-
                                 break;
 
                             default:
@@ -828,11 +827,9 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
                 throw new NotSslRecordException("not an SSL/TLS record");
             }
 
-            // IMPORTANT:
-            //
-            // This calculation only works as we not support compression and set
-            // SSL_OP_NO_COMPRESSION in ReferenceCountedOpenSslContext. If compression is supported
-            // it may be possible that the plaintext length is > then the packet length.
+            //This calculation only works as we do not support compression. We explicitly disable compression
+            // by setting the SSL_OP_NO_COMPRESSION option. If compression were enabled it is possible that the
+            // plain text length is > the packet length.
             if (packetLength - SslUtils.SSL_RECORD_HEADER_LENGTH > capacity) {
                 // No enough space in the destination buffer so signal the caller
                 // that the buffer needs to be increased.
